@@ -5,6 +5,7 @@ import "@gelatonetwork/web3-functions-sdk/hardhat-plugin";
 
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
+import "hardhat-deploy";
 import "@nomiclabs/hardhat-etherscan";
 import { resolve } from "path";
 import * as glob from "glob";
@@ -24,15 +25,14 @@ glob.sync("./tasks/**/*.ts").forEach(function (file: any) {
 });
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "avax",
+  defaultNetwork: "mumbai",
 
   // web3 functions
   w3f: {
     rootDir: "./src/web3-functions",
     debug: false,
-    networks: ["hardhat", "avax"], //(multiChainProvider) injects provider for these networks
+    networks: ["hardhat", "mumbai"], //(multiChainProvider) injects provider for these networks
   },
-
   etherscan: {
     apiKey: {
       goerli: ETHERSCAN_API_KEY ?? "",
@@ -60,7 +60,10 @@ const config: HardhatUserConfig = {
     matic: {
       url: "https://polygon-rpc.com",
       gasPrice: 1000000000,
-      accounts: process.env["PRIVATE_KEY"] !== undefined ? [process.env["PRIVATE_KEY"]] : [],
+      accounts:
+        process.env["PRIVATE_KEY"] !== undefined
+          ? [process.env["PRIVATE_KEY"]]
+          : [],
     },
     polygon: {
       chainId: 137,
