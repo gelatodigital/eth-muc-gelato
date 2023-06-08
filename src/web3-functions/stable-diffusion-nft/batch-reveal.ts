@@ -155,7 +155,7 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
           };
         }
       }
-
+ 
       // Publish NFT metadata on IPFS
       const imageBlob = (await axios.get(imageUrl, { responseType: "blob" }))
         .data;
@@ -182,24 +182,18 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
 
   await storage.set("lastProcessedId", tokenId.toString());
 
-  const proxyInterface = new utils.Interface(PROXY_ABI);
   const addresses: string[] = [];
-  const calls: string[] = [];
-  const values: number[] = [];
+  const callDatas: Array<{to:string, callData:string}> = [];
+
   tokensData.forEach((token) => {
-    addresses.push(nft.address);
-    calls.push(
-      nft.interface.encodeFunctionData("revealNft", [token.id, token.url])
-    );
-    values.push(0);
+    callDatas.push({
+      to: nft.address,
+      callData: nft.interface.encodeFunctionData("revealNft", [token.id, token.url])
+    });
   });
-  let callData = proxyInterface.encodeFunctionData("batchExecuteCall", [
-    addresses,
-    calls,
-    values,
-  ]);
+
   return {
     canExec: true,
-    callData: [{ to: nftAddress, data: callData }],
+    callData: callDatas
   };
 });
