@@ -183,12 +183,12 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   await storage.set("lastProcessedId", tokenId.toString());
 
   const addresses: string[] = [];
-  const callDatas: Array<{to:string, callData:string}> = [];
+  const callDatas: Array<{to:string, data:string}> = [];
 
   tokensData.forEach((token) => {
     callDatas.push({
       to: nft.address,
-      callData: nft.interface.encodeFunctionData("revealNft", [token.id, token.url])
+      data: nft.interface.encodeFunctionData("revealNft", [token.id, token.url])
     });
   });
 
