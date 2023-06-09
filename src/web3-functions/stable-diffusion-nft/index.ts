@@ -3,7 +3,7 @@ import {
   Web3Function,
   Web3FunctionContext,
 } from "@gelatonetwork/web3-functions-sdk";
-import { Contract, BigNumber } from "ethers";
+import { Contract } from "ethers";
 import { NFTStorage, File } from "nft.storage";
 import axios, { AxiosError } from "axios";
 
@@ -17,13 +17,14 @@ const NFT_ABI = [
   "function mint(bool _isNight) external",
   "event MintEvent(uint256 _tokenId)",
 ];
+
 const NOT_REVEALED_URI =
   "ipfs://bafyreicwi7sbomz7lu5jozgeghclhptilbvvltpxt3hbpyazz5zxvqh62m/metadata.json";
 
 function generateNftProperties(isNight: boolean) {
   const timeSelected = isNight ? "at night" : "at sunset";
 
-  const description = `A cute robot eating an icecream with Barcelona background ${timeSelected} in a cyberpunk art, 3D, video game, and pastel salmon colors`;
+  const description = `A strawberry ice cream with rainbow sprinkles against the London skyline ${timeSelected}, 8k resolution, hyperrealism`;
   return {
     description,
     attributes: [
@@ -56,108 +57,145 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
       message: "Error: Missing Secrets",
     };
   }
-  ////// User Storage
+
+  // Retreive current state
+  const nft = new Contract(nftAddress as string, NFT_ABI, provider);
   const lastProcessedId = parseInt(
     (await storage.get("lastProcessedId")) ?? "0"
   );
-
-  const nft = new Contract(nftAddress as string, NFT_ABI, provider);
-  console.log(nft);
-  const currentTokenId = await nft.tokenIds();
-  if (currentTokenId.eq(BigNumber.from(lastProcessedId))) {
+  const currentTokenId = (await nft.tokenIds()).toNumber();
+  console.log("currentTokenId", currentTokenId);
+  if (currentTokenId === lastProcessedId) {
     return { canExec: false, message: "No New Tokens" };
   }
 
-  const tokenId = lastProcessedId + 1;
-  const tokenURI = await nft.tokenURI(tokenId);
-  if (tokenURI == NOT_REVEALED_URI) {
-    // Generate NFT properties
-    const isNight = await nft.nightTimeByToken(tokenId);
-    const nftProps = generateNftProperties(isNight);
-    console.log(`Stable Diffusion prompt: ${nftProps.description}`);
-
-    // Generate NFT image with Stable Diffusion
-
-    let imageUrl: string;
-
-    try {
-      const stableDiffusionResponse = await fetch(
-        "https://stablediffusionapi.com/api/v3/text2img",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            key: stableDiffusionApiKey,
-            prompt: nftProps.description,
-            negative_prompt: null,
-            width: "512",
-            height: "512",
-            samples: "1",
-            num_inference_steps: "20",
-            seed: null,
-            guidance_scale: 7.5,
-            safety_checker: "yes",
-            multi_lingual: "no",
-            panorama: "no",
-            self_attention: "no",
-            upscale: "no",
-            embeddings_model: "embeddings_model_id",
-            webhook: null,
-            track_id: null,
-          }),
-        }
-      );
-      const stableDiffusionData = await stableDiffusionResponse.json();
-      imageUrl = stableDiffusionData.output[0] as string;
-      console.log(`Stable Diffusion generated image: ${imageUrl}`);
-    } catch (_err) {
-      const stableDiffusionError = _err as AxiosError;
-      if (stableDiffusionError.response) {
-        const errorMessage = stableDiffusionError.response?.status
-          ? `${stableDiffusionError.response.status}: ${stableDiffusionError.response.data}`
-          : stableDiffusionError.message;
-        return {
-          canExec: false,
-          message: `Stable Diffusions error: ${errorMessage}`,
-        };
-      }
+  // Get batch of next token ids to process in parallel
+  const tokenIds: number[] = [];
+  let tokenId = lastProcessedId;
+  let nbRpcCalls = 0;
+  const MAX_RPC_CALLS = 30;
+  const MAX_NFT_IN_BATCH = 5;
+  while (
+    tokenId < currentTokenId &&
+    tokenIds.length < MAX_NFT_IN_BATCH &&
+    nbRpcCalls < MAX_RPC_CALLS
+  ) {
+    // Check if token needs to be revealed or is already revealed
+    tokenId++;
+    const tokenURI = await nft.tokenURI(tokenId);
+    if (tokenURI === NOT_REVEALED_URI) {
+      tokenIds.push(tokenId);
+    } else {
+      console.log(`#${tokenId} already revealed!`);
     }
-
-    // Publish NFT metadata on IPFS
-    const imageBlob = (await axios.get(imageUrl, { responseType: "blob" }))
-      .data;
-
-    const client = new NFTStorage({ token: nftStorageApiKey });
-    const imageFile = new File([imageBlob], `gelato_bot_${tokenId}.png`, {
-      type: "image/png",
-    });
-
-    const metadata = await client.store({
-      name: `GelatoBot #${tokenId}`,
-      description: nftProps.description,
-      image: imageFile,
-      attributes: nftProps.attributes,
-      collection: {
-        name: "GelatoBots",
-        family: "gelatobots",
-      },
-    });
-    console.log("IPFS Metadata:", metadata.url);
-    let callData = nft.interface.encodeFunctionData("revealNft", [
-      tokenId,
-      metadata.url,
-    ]);
-    await storage.set("lastProcessedId", tokenId.toString());
-
-    return {
-      canExec: true,
-      callData: [{ to: nftAddress, data: callData }],
-    };
-  } else {
-    console.log(`#${tokenId} already minted!`);
-    await storage.set("lastProcessedId", tokenId.toString());
-    return { canExec: false, message: "Token already Minted" };
+    nbRpcCalls++;
   }
+
+  if (tokenIds.length === 0) {
+    console.log(`All NFTs already revealed!`);
+    await storage.set("lastProcessedId", tokenId.toString());
+    return { canExec: false, message: "All NFTs already revealed" };
+  }
+
+  console.log("NFTs to reveal:", tokenIds);
+  const tokensData = await Promise.all(
+    tokenIds.map(async (tokenId) => {
+      // Generate NFT properties
+      const isNight = await nft.nightTimeByToken(tokenId);
+      const nftProps = generateNftProperties(isNight);
+      console.log(
+        `#${tokenId} Stable Diffusion prompt: ${nftProps.description}`
+      );
+
+      // Generate NFT image with Stable Diffusion
+      let imageUrl: string;
+      try {
+        const stableDiffusionResponse = await fetch(
+          "https://stablediffusionapi.com/api/v3/text2img",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              key: stableDiffusionApiKey,
+              prompt: nftProps.description,
+              negative_prompt: null,
+              width: "512",
+              height: "512",
+              samples: "1",
+              num_inference_steps: "20",
+              seed: null,
+              guidance_scale: 7.5,
+              safety_checker: "yes",
+              multi_lingual: "no",
+              panorama: "no",
+              self_attention: "no",
+              upscale: "no",
+              embeddings_model: "embeddings_model_id",
+              webhook: null,
+              track_id: null,
+            }),
+          }
+        );
+        const stableDiffusionData = await stableDiffusionResponse.json();
+        console.log(stableDiffusionData.output[0]);
+        imageUrl = stableDiffusionData.output[0] as string;
+        console.log(`Stable Diffusion generated image: ${imageUrl}`);
+      } catch (_err) {
+        const stableDiffusionError = _err as AxiosError;
+        if (stableDiffusionError.response) {
+          const errorMessage = stableDiffusionError.response?.status
+            ? `${stableDiffusionError.response.status}: ${stableDiffusionError.response.data}`
+            : stableDiffusionError.message;
+          return {
+            canExec: false,
+            message: `Stable Diffusion error: ${errorMessage}`,
+          };
+        }
+      }
+
+      // Publish NFT metadata on IPFS
+      const imageBlob = (await axios.get(imageUrl, { responseType: "blob" }))
+        .data;
+      const nftStorage = new NFTStorage({ token: nftStorageApiKey });
+
+      const imageFile = new File([imageBlob], `gelato_nft_${tokenId}.png`, {
+        type: "image/png",
+      });
+      const metadata = await nftStorage.store({
+        name: `GelatoNft #${tokenId}`,
+        description: nftProps.description,
+        image: imageFile,
+        attributes: nftProps.attributes,
+        collection: {
+          name: "GelatoNfts",
+          family: "gelatonfts",
+        },
+      });
+      console.log(`#${tokenId} IPFS Metadata ${metadata.url}`);
+
+      return { id: tokenId, url: metadata.url };
+    })
+  );
+
+  await storage.set("lastProcessedId", tokenId.toString());
+
+  const addresses: string[] = [];
+  const callDatas: Array<{ to: string; data: string }> = [];
+
+  tokensData.forEach((token) => {
+    callDatas.push({
+      to: nft.address,
+      data: nft.interface.encodeFunctionData("revealNft", [
+        token.id,
+        token.url,
+      ]),
+    });
+  });
+
+  return {
+    canExec: true,
+    callData: callDatas,
+  };
 });
