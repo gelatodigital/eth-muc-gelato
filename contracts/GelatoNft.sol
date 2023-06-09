@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract GelatoBotNft is ERC721URIStorage, Ownable, Pausable {
+contract GelatoNft is ERC721URIStorage, Ownable, Pausable {
     using Counters for Counters.Counter;
     Counters.Counter public tokenIds;
     address public immutable gelatoMsgSender;
@@ -18,9 +18,7 @@ contract GelatoBotNft is ERC721URIStorage, Ownable, Pausable {
     event MetadataUpdates(uint256 _tokenId);
     event MintEvent(uint256 _tokenId);
 
-    constructor(
-        address _gelatoMsgSender
-    ) ERC721("AVAX Summit Gelato Bots", "AVAX-GEL-BOT") {
+    constructor(address _gelatoMsgSender) ERC721("Gelato NFT", "GEL-NFT") {
         gelatoMsgSender = _gelatoMsgSender;
     }
 
