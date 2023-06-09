@@ -1,15 +1,16 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const Factory = await ethers.getContractFactory("GelatoBotNft");
-  const gelatoBotNft = await Factory.deploy(
-    "0xcc53666e25bf52c7c5bc1e8f6e1f6bf58e871659"
+  const Factory = await ethers.getContractFactory("GelatoNft");
+  //Replace with your dedicated msg.sender
+  const gelatoNft = await Factory.deploy(
+    "0x2e4d6bec6cd616f71274fae0fbfaceb5188b55c2"
   );
 
-  console.log("Contract deployed to:", gelatoBotNft.address);
+  console.log("Contract deployed to:", gelatoNft.address);
 
   // Wait for the transaction to be mined
-  await gelatoBotNft.deployTransaction.wait();
+  await gelatoNft.deployTransaction.wait();
 
   console.log("Deployment transaction mined.");
 }
