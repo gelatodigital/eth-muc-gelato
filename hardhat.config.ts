@@ -25,13 +25,13 @@ glob.sync("./tasks/**/*.ts").forEach(function (file: any) {
 });
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "mumbai",
+  defaultNetwork: "polygon",
 
   // web3 functions
   w3f: {
     rootDir: "./src/web3-functions",
     debug: false,
-    networks: ["hardhat", "mumbai"], //(multiChainProvider) injects provider for these networks
+    networks: ["polygon", "mumbai"], //(multiChainProvider) injects provider for these networks
   },
   etherscan: {
     apiKey: {
@@ -59,7 +59,7 @@ const config: HardhatUserConfig = {
     },
     matic: {
       url: "https://polygon-rpc.com",
-      gasPrice: 1000000000,
+      gasPrice: 10000000000,
       accounts:
         process.env["PRIVATE_KEY"] !== undefined
           ? [process.env["PRIVATE_KEY"]]

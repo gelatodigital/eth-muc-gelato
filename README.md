@@ -3,9 +3,9 @@
 ## Summary
 
 NFT powered by Open AI & Web3 functions:
-- Each uer can mint 1 NFT
+- Each user can mint 1 NFT
 - A Web3 function is listening to every new mint and generate a new art using Stable Diffusion
-- The NFT pic is published on IPFS and revealed on-chain via Gelato Automate
+- The NFT pic is published on IPFS and revealed on-chain via Gelato Web3 Fucntion
 
 
 ## How to run 

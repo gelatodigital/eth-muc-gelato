@@ -8,7 +8,7 @@ async function main() {
 
   // Deploy Web3Function on IPFS
   console.log("Deploying Web3Function on IPFS...");
-  const web3Function = "./web3-functions/open-ai-nft/index.ts";
+  const web3Function = "./web3-functions/stable-diffusion-nft/index.ts";
   const cid = await Web3FunctionBuilder.deploy(web3Function);
   console.log(`Web3Function IPFS CID: ${cid}`);
 

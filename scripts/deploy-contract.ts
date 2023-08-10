@@ -1,18 +1,20 @@
 import { ethers } from "hardhat";
+import hre from "hardhat";
 
 async function main() {
-  const Factory = await ethers.getContractFactory("GelatoNft");
-  //Replace with your dedicated msg.sender
-  const gelatoNft = await Factory.deploy(
-    "0x2e4d6bec6cd616f71274fae0fbfaceb5188b55c2"
-  );
 
-  console.log("Contract deployed to:", gelatoNft.address);
+  const [signer] = await hre.ethers.getSigners();
+  console.log(signer.address)
+  let nonce = await signer.getTransactionCount();
 
-  // Wait for the transaction to be mined
-  await gelatoNft.deployTransaction.wait();
+// Deploying NFT contract
+const nftFactory = await hre.ethers.getContractFactory("GelatoNft",signer);
+console.log("Deploying GelatoBotNft...");
+const gelatoBotNft = await nftFactory.deploy("0xbb97656cd5fece3a643335d03c8919d5e7dcd225");
+await gelatoBotNft.deployed();
 
-  console.log("Deployment transaction mined.");
+
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

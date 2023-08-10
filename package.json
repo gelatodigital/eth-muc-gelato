@@ -7,9 +7,8 @@
     "format:check": "prettier --check '*/**/*.*{js,json,md,ts}'",
     "lint": "eslint -c .eslintrc.json --ext \"**/*.ts\"",
     "deploy": "npx hardhat run scripts/deploy-contract.ts",
-    "w3f:deploy-single": "npx w3f deploy web3-functions/stable-diffusion-nft/index.ts",
-    "w3f:deploy": "npx w3f deploy web3-functions/stable-diffusion-nft/batch-reveal.ts",
-    "test": "npx w3f test web3-functions/stable-diffusion-nft/index.ts --user-args=nftAddress:0x5041c60C75633F29DEb2AED79cB0A9ed79202415 --show-logs",
+    "w3f:deploy": "npx w3f deploy src/web3-functions/stable-diffusion-nft/index.ts",
+    "test": "npx w3f test src/web3-functions/stable-diffusion-nft/index.ts --logs --chain-id=137",
     "test:batch": "npx w3f test web3-functions/stable-diffusion-nft/batch-reveal.ts --user-args=nftAddress:0x5041c60C75633F29DEb2AED79cB0A9ed79202415 --show-logs"
   },
   "license": "ISC",

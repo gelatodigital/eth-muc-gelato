@@ -18,7 +18,7 @@ contract GelatoNft is ERC721URIStorage, Ownable, Pausable {
     event MetadataUpdates(uint256 _tokenId);
     event MintEvent(uint256 _tokenId);
 
-    constructor(address _gelatoMsgSender) ERC721("Gelato NFT", "GEL-NFT") {
+    constructor(address _gelatoMsgSender) ERC721("Gelato MUC NFT", "GEL-MUC-NFT") {
         gelatoMsgSender = _gelatoMsgSender;
     }
 

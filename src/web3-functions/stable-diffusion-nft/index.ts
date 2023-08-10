@@ -24,7 +24,7 @@ const NOT_REVEALED_URI =
 function generateNftProperties(isNight: boolean) {
   const timeSelected = isNight ? "at night" : "at sunset";
 
-  const description = `A strawberry ice cream with rainbow sprinkles against the London skyline ${timeSelected}, 8k resolution, hyperrealism`;
+  const description = `A bot eating an ice cream against the Munich skyline ${timeSelected}, 8k resolution, hyperrealism`;
   return {
     description,
     attributes: [
@@ -42,6 +42,9 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
   ////// User Arguments
   const nftAddress = userArgs.nftAddress as string;
   console.log("nftAddress", nftAddress);
+
+  const network = await provider.getNetwork()
+  console.log(network)
 
   if (!nftAddress)
     throw new Error("Missing userArgs.nftAddress please provide");
@@ -169,8 +172,8 @@ Web3Function.onRun(async (context: Web3FunctionContext) => {
         image: imageFile,
         attributes: nftProps.attributes,
         collection: {
-          name: "GelatoNfts",
-          family: "gelatonfts",
+          name: "GelatoMucNfts",
+          family: "gelato-muc-nfts",
         },
       });
       console.log(`#${tokenId} IPFS Metadata ${metadata.url}`);
