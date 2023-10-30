@@ -25,7 +25,7 @@ glob.sync("./tasks/**/*.ts").forEach(function (file: any) {
 });
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "polygon",
+  defaultNetwork: "localhost",
 
   // web3 functions
   w3f: {
@@ -49,7 +49,7 @@ const config: HardhatUserConfig = {
       },
     },
     localhost: {
-      url: "http://localhost:8545",
+      url: "http://127.0.0.1:8545/",
       chainId: 31337,
     },
     goerli: {
